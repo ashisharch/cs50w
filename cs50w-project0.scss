@@ -1,0 +1,51 @@
+/* Bootstrap css*/
+$font-family: cursive;
+
+@import "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css";
+
+#topnav {
+  div {
+    background-color: #99e6ff;
+    margin: 1px;
+    width: 300px;
+  }
+}
+.container-fluid > div > div {
+  font-size: 12px;
+  padding: 10px;
+}
+.separator {
+  border: 1px solid gray;
+}
+a {
+  padding: 10px;
+  margin-left: 10px;
+}
+%a-decoration-base {
+  text-decoration: none;
+}
+a.navitem:hover {
+  @extend %a-decoration-base;
+  color: orange;
+}
+a.project-title:hover {
+  @extend %a-decoration-base;
+  color: red;
+}
+li {
+  font-family: $font-family;
+}
+#footer{
+  font-weight: lighter;
+}
+
+@media (min-width: 600px) {
+  h1::before {
+    content: "CS50W - Projects Homepage"
+  }
+}
+@media (max-width: 599px) {
+  h1::before {
+    content: "CS50W Projects"
+  }
+}

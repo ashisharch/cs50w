@@ -3,96 +3,132 @@
 	<head>
 
 		<!-- flexible sizing -->
-    	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-		<!-- Bootstrap CSS -->
-		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-
-		<style>
-			.topnav > div {
-				border: 1px;
-				padding-left: 10px;
-				background-color: #99e6ff ;
-			}
-			.projects > div > div {
-				border-right: 2px solid #99e6ff;
-			}
-			.separator {
-				border: 1px solid gray;
-			}
-			.projects {
-				border: 12px solid white;
-			}
-		</style>
+		<link rel="stylesheet" href="cs50w-project0.css">
+		<!-- link rel="stylesheet" href="test.css" -->
 
 		<title> Project 0 </title>
 
 	</head>
 	<body>
-		<div class="topnav">
-			<div class="row">
-				<div class="col-3"><a href="">Home</a></div>
-				<div class="col-3"><a href="">Project 0</a></div>
-				<div class="col-3"><a href="">Project 1</a></div>
-				<div class="col-3"><a href="">Project 2</a></div>
-			</div>
+		<!-- media query example to inject page title-->
+		<h1></h1>
+		<h4>by Ashish Agrawal </h4>
+
+		<div id="topnav" class="d-flex">
+				<div ><a class="navitem" href="">Home</a></div>
+				<div ><a class="navitem" href="">Project 0</a></div>
+				<div ><a class="navitem" href="project1.html">Project 1</a></div>
+				<div ><a class="navitem" href="">Project 2</a></div>
 		</div>
 
-
-		<div class="projects">
-			<div class="row">
-				<div class="col-2">Project 0</div>
-				<div class="col-10">
-					<div class="row">
-						<div class="col-12">Description: This is description adf</div>
-						<div class="col-12">Takeaways
-							<ul>
-								<li> takeaway 1
-								<li> takeaway 2
-							</ul>
-						</div>
+		<div class="accordion" id="projectAccordion">
+			<div class="card">
+				<div class="projects">
+					<a class="project-title" data-toggle="collapse" href="#project0">Project 0</a>
+					<div class="collapse" id="project0">
+								<table class="table table-dark table-sm">
+									<thead>
+										<tr class="d-flex">
+											<th class="col-1"> </th>
+											<th class="col-11"> </th>
+										</tr>
+									</thead>
+									<tbody>
+											<tr class="d-flex">
+												<td> Description </td>
+												<td> This is the description TBD </td>
+											</tr>
+											<tr class="d-flex">
+												<td>Takeaways </td>
+												<td>
+													<ul>
+														<li> takeaway 1
+														<li> takeaway 2
+													</ul>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+					</div>
+				</div>
+			</div>
+			<div class="card">
+				<div class="projects">
+					<a class="project-title" data-toggle="collapse" href="#project1">Project 1</a>
+					<div class="collapse" id="project1">
+								<table class="table table-dark table-sm">
+									<thead>
+										<tr class="d-flex">
+											<th class="col-1"> </th>
+											<th class="col-11"> </th>
+										</tr>
+									</thead>
+									<tbody>
+											<tr class="d-flex">
+												<td> Description </td>
+												<td> This is the description TBD </td>
+											</tr>
+											<tr class="d-flex">
+												<td>Takeaways </td>
+												<td>
+													<ul>
+														<li> takeaway 1
+														<li> takeaway 2
+													</ul>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+					</div>
+				</div>
+			</div>
+			<div class="card">
+				<div class="projects">
+					<a class="project-title" data-toggle="collapse" href="#project2">Project 2</a>
+					<div class="collapse" id="project2">
+								<table class="table table-dark table-sm">
+									<thead>
+										<tr class="d-flex">
+											<th class="col-1"> </th>
+											<th class="col-11"> </th>
+										</tr>
+									</thead>
+									<tbody>
+											<tr class="d-flex">
+												<td> Description </td>
+												<td> This is the description TBD </td>
+											</tr>
+											<tr class="d-flex">
+												<td>Takeaways </td>
+												<td>
+													<ul>
+														<li> takeaway 1
+														<li> takeaway 2
+													</ul>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
 					</div>
 				</div>
 			</div>
 		</div>
 
-		<div class="projects">
-			<div class="row">
-				<div class="col-2">Project 0</div>
-				<div class="col-10">
-					<div class="row">
-						<div class="col-12">Description: This is description adf</div>
-						<div class="col-12">Takeaways
-							<ul>
-								<li> takeaway 1
-								<li> takeaway 2
-							</ul>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
+		<!-- Grid model example -->
+		<div class="container-fluid">
+		  <div class="row">
+		    <div class="col-2"> &copy; Ashish Agrawal 2020</div>
+		    <div class="col-10"> Email me at ashisharch@gmail.com </div>
+		  </div>
+  	</div>
 
-		<div class="projects">
-			<div class="row">
-				<div class="col-2">Project 0</div>
-				<div class="col-10">
-					<div class="row">
-						<div class="col-12">Description: This is description adf</div>
-						<div class="col-12">Takeaways
-							<ul>
-								<li> takeaway 1
-								<li> takeaway 2
-							</ul>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-
-		<table class="table">
-			<tr><td> &copy; Ashish Agrawal 2020 </td></tr>
-		</table>
-
+		<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+		<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
 	</body>
 </html>
