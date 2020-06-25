@@ -1,0 +1,54 @@
+/* Bootstrap css*/
+@import "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css";
+#topnav div {
+  background-color: #99e6ff;
+  margin: 1px;
+  width: 300px;
+}
+
+.container-fluid > div > div {
+  font-size: 12px;
+  padding: 10px;
+}
+
+.separator {
+  border: 1px solid gray;
+}
+
+a {
+  padding: 10px;
+  margin-left: 10px;
+}
+
+a.project-title:hover, a.navitem:hover {
+  text-decoration: none;
+}
+
+a.navitem:hover {
+  color: orange;
+}
+
+a.project-title:hover {
+  color: red;
+}
+
+li {
+  font-family: cursive;
+}
+
+#footer {
+  font-weight: lighter;
+}
+
+@media (min-width: 600px) {
+  h1::before {
+    content: "CS50W - Projects Homepage";
+  }
+}
+@media (max-width: 599px) {
+  h1::before {
+    content: "CS50W Projects";
+  }
+}
+
+/*# sourceMappingURL=cs50w-project0.css.map */
