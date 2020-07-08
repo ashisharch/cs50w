@@ -1,0 +1,20 @@
+{% extends "encyclopedia/layout.html" %}
+
+{% block title %}
+    {{entry_name}}
+{% endblock %}
+
+{% block nav %}
+  <div style="padding-left:5px;"> All Pages </div>
+  {% for entry in entries %}
+      <!-- Entry name is passed as url parameter -->
+      <div class="navrow"><a href="{% url 'encyclopedia:u_entry' entry %}" class="dynamicNav">{{ entry }}</a></div>
+  {% endfor %}
+  <br>
+{% endblock %}
+
+{% block body %}
+    <!-- Display body of entry -->
+    {{entry_text|safe}}
+    <a style="background-color:yellow;" href="{% url 'encyclopedia:u_edit' %}?p={{entry_name}}">Edit this wiki entry<a/>
+{% endblock %}
