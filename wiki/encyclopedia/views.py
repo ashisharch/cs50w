@@ -6,10 +6,11 @@ from django import forms
 from . import util
 import random
 
-
+#Form that captures the search input from user
 class NewSearchForm(forms.Form):
     query = forms.CharField(label="search string")
 
+#Form that allows the user to edit or create, dependingo on the path taken by user
 class NewCreateEditForm(forms.Form):
     entry_title = forms.CharField(label="entry title")
     entry_body  = forms.CharField(widget=forms.Textarea(attrs={'style': 'height: 200px;', 'title': 'Entry Body'}))
@@ -22,7 +23,7 @@ def index(request):
         "entries": util.list_entries(),
     })
 
-
+#This view displays a single entry
 def url_entry(request, entry_name):
     file_text = util.get_entry(entry_name)
 
@@ -38,7 +39,7 @@ def url_entry(request, entry_name):
             "error_message": "This entry does not exist"
         })
 
-
+#This view provides the logic for searching for a wiki entry based on user input
 def search(request):
     entry_list = util.list_entries()
     matching_items = 0
