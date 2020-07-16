@@ -1,0 +1,86 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+    <h2>Listing Detail</h2>
+
+    {% if user.is_authenticated and listing.by_user.id == user.id %}
+      <a href="{% url 'auctions:u_manage_listing' listing.id %}">Manage This listing</a>
+    {%endif%}
+
+
+    <ul>
+      <p>ID: {{listing.id}}</p>
+      <p>Listing Title: {{listing.title}} </p>
+      <p>Listing Description: {{listing.description}} </p>
+      <p>Photo: {{listing.photo_url}} </p>
+      <p>Starting Bid: {{listing.starting_bid}} </p>
+      <p>Current Bid: {{listing.current_bid}} </p>
+      <p>Active: {{listing.active}} </p>
+
+      <h4>Bidding </h4>
+      {% if user.is_authenticated %}
+        <p> Current Bids : (starting bid){{listing.starting_bid }}
+        {% for bid in listing.bids_received.all %}
+          <li> {{bid.bid_value}} / by {{bid.by_user}}
+        {% endfor %}
+        </p>
+
+        {%if error_message%}
+          {{error_message}}
+        {%endif%}
+
+        <p><a href="">Make a bid</a></p>
+        <form action="{% url 'auctions:u_add_bid' %}" method="post">
+            {% csrf_token %}
+            <input type="number" name="bid" placeholder="Bid {{next_bid}} or higher" min="{{next_bid}}">
+            <input type="hidden" name="listing" value="{{listing.id}}"></input>
+            <input type="hidden" name="user" value="{{user.id}}"></input>
+            {{create_form.as_p}}
+            <input type="submit" value="Submit">
+        </form>
+
+        {%if request.session.msg%}
+          {{request.session.msg}}
+        {%endif%}
+
+        <h4>watchlist</h4>
+        <form action="{% url 'auctions:u_add_to_watchlist' %}" method="post">
+            {% csrf_token %}
+            <select name="watchlist">
+                {% for watchlist in user.watchlist.all %}
+                    <option value="{{ watchlist.id }}">{{ watchlist.name }}</option>
+                {% endfor %}
+            </select>
+
+            <input type="hidden" name="listing" value="{{listing.id}}"></input>
+            <input type="hidden" name="user" value="{{user.id}}"></input>
+            {{create_form.as_p}}
+            <input type="submit" value="Add item to watchlist">
+        </form>
+
+        <h3>Add a comment </h3>
+        <form action="{% url 'auctions:u_add_comment' listing.id%}" method="post">
+          {% csrf_token %}
+          <textarea name="comment_body" rows="4" cols="80"></textarea>
+          <input type="submit" value="Add comment">
+        </form>
+        <!-- Show all previous comments made -->
+        <hr>
+        {% for comment in listing.comments.all %}
+          by:{{comment.by_user.username}} : {{comment.content}}
+          <hr>
+        {% endfor %}
+
+      {% else %}
+          <p>You must be signed in to Make a bid</p>
+      {% endif %}
+
+      <h4>TODO</h4>
+
+      <p>If the aution is closed, and if this user has won the bid, display they are winner</p>
+
+
+      <p>If owner of bid, then close this bid</p>
+
+    </ul>
+{% endblock %}
