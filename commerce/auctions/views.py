@@ -1,6 +1,6 @@
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponseBadRequest, HttpResponseRedirect, Http404
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.forms import ModelForm
@@ -326,8 +326,12 @@ def categories(request):
 #Remove a listing from a watchlist
 @login_required(login_url='/login')
 def unwatch_listing(request, watchlist_id, listing_id):
-    w = Watchlist.objects.get(pk=watchlist_id)
-    l = Listing.objects.get(pk=listing_id)
+    try:
+        w = Watchlist.objects.get(pk=watchlist_id)
+        l = Listing.objects.get(pk=listing_id)
+    except:
+        return redirect("auctions:u_watchlist")
+
     w.listings.remove(l)
     w.save()
     return redirect("auctions:u_watchlist")
@@ -335,8 +339,11 @@ def unwatch_listing(request, watchlist_id, listing_id):
 #Delete a watchlist
 @login_required(login_url='/login')
 def delete_watchlist(request, watchlist_id):
-    w = Watchlist.objects.get(pk=watchlist_id)
-    w.delete()
+    try:
+        w = Watchlist.objects.get(pk=watchlist_id)
+        w.delete()
+    except:
+        return redirect("auctions:u_watchlist")
     return redirect("auctions:u_watchlist")
 
 
@@ -345,7 +352,6 @@ def delete_watchlist(request, watchlist_id):
 def add_to_watchlist(request, listing_id):
     if request.method == "POST":
         l = Listing.objects.get(pk=listing_id)
-        #l = Listing.objects.get(pk=request.POST.get("listing"))
         u = User.objects.get(pk=request.POST.get("user"))
 
         #Add item to watchlist only if watchlist exist
