@@ -1,30 +1,34 @@
 {% extends "auctions/layout.html" %}
 
 {% block title %}
-    Create New Auction Listing
+    Manage Auction Listing
 {% endblock %}
 
 
 {% block body %}
 
   {% if user.is_authenticated %}
-      {% if action == "create" %}
-          <h1>Create auction listing </h1>
-      {% elif action == "manage" %}
-          <h1>Manage auction listing </h1>
-          <form action="{% url 'auctions:u_close_listing' '1' %}" method="post">
-              {% csrf_token %}
-              <input type="hidden" name="listing_id" value="{{listing_id}}">
-              <input type="submit" value="Close this listing">
-          </form>
-
+      <h1>Manage auction listing </h1>
+      {% if listing.active == True %}
+        <form action="{% url 'auctions:u_close_listing' listing.id %}" method="post">
+            {% csrf_token %}
+            <input type="submit" value="Close this listing">
+        </form>
+      {%else%}
+        <p>This listing is closed. Go back to active listings and happy bidding.</p>
       {%endif%}
 
-      <fieldset {{is_editable}}>
-        <form action="{% url 'auctions:u_save_listing' %}" method="post">
+
+      {% if listing.active == True %}
+        <fieldset>
+      {% else %}
+        <fieldset disabled>
+      {% endif %}
+        <form action="{% url 'auctions:u_manage_listing' listing.id %}" method="post">
             {% csrf_token %}
-            <input type="hidden" name="listing_id" value="{{listing_id}}">
-            {{create_form.as_p}}
+            <table>
+            {{create_form.as_table}}
+            </table>
             <input type="submit" value="Submit">
         </form>
     </fieldset>

@@ -7,39 +7,40 @@
 
     {% if user.is_authenticated %}
 
-    <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#createWatchlistForm" aria-expanded="false" aria-controls="createWatchlistForm">
-      Create a Watchlist
-    </button>
-
-      <div class="collapse" id="createWatchlistForm">
-        <div class="card card-body">
-          <form action="{% url 'auctions:u_watchlist' %}" method="post">
-              {% csrf_token %}
-              Watchlist Name: {{create_form.name}}
-              <input type="hidden" name="user" value="{{user.id}}"></input>
-              <input type="submit" value="Submit">
-          </form>
-        </div>
-      </div>
-
-      <table border="1">
+      <ol>
         {% for watchitem in watchlist %}
-        <tr>
-          <td>Name: {{watchitem.name}} <a href="{% url 'auctions:u_delete_watchlist' watchitem.id %}">Delete Watchlist</a></td>
-          <td>
-            {% if watchitem.listings.count > 0 %}
-              {%for listing in watchitem.listings.all %}
-                <li><a href="{% url 'auctions:u_listing_detail' listing.id %}"> {{listing.title}} </a> -- <a href="{% url 'auctions:u_unwatch_listing' watchitem.id listing.id%}">Remove listing</a></li>
-              {%endfor%}
-            {% else %}
-              Lets add some <a href="/">listings</a> to watch
-            {% endif %}
-          </td>
-        </tr>
-      {% endfor %}
-    </table>
+          <li>{{watchitem.name}} (<a href="{% url 'auctions:u_delete_watchlist' watchitem.id %}">Delete this watchlist</a>)
+          {% if watchitem.listings.count > 0 %}
+          <ul>
+            {%for listing in watchitem.listings.all %}
+              <li>
+                <a href="{% url 'auctions:u_listing_detail' listing.id %}"> {{listing.title}} </a>
+                (<a href="{% url 'auctions:u_unwatch_listing' watchitem.id listing.id%}">stop watching this item</a>)
+              </li>
+            {%endfor%}
+          </ul>
+          {% else %}
+            <ul><li>No items to watch yet. Lets add some <a href="/">listings</a> to watch</li></ul>
+          {% endif %}
+          <p></p>
+        {%endfor%}
+      </ol>
 
+        <hr>
+        <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#createWatchlistForm" aria-expanded="false" aria-controls="createWatchlistForm">
+          Create a Watchlist
+        </button>
 
+          <div class="collapse" id="createWatchlistForm">
+            <div class="card card-body">
+              <form action="{% url 'auctions:u_watchlist' %}" method="post">
+                  {% csrf_token %}
+                  Watchlist Name: {{create_form.name}}
+                  <input type="hidden" name="user" value="{{user.id}}"></input>
+                  <input type="submit" value="Submit">
+              </form>
+            </div>
+          </div>
     {% else %}
         You must be signed in to create a watchlist.
     {% endif %}

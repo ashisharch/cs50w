@@ -7,4 +7,12 @@
       <li> <a href="{% url 'auctions:u_listing_detail' listing.id %}"> {{listing.title}} --By:{{listing.by_user}} </a> </li>
     {% endfor %}
     </ul>
+
+    <h2>Closed Listings</h2>
+    <ul>
+    {% for listing in closed_listings %}
+      <li> <a href="{% url 'auctions:u_listing_detail' listing.id %}"> {{listing.title}} --By:{{listing.by_user}} </a> </li>
+    {% endfor %}
+    </ul>
+
 {% endblock %}

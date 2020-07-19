@@ -6,16 +6,16 @@ from django.urls import reverse
 from django.forms import ModelForm
 from django.db.models import Max
 from django.views.decorators.http import *
-
+from django.contrib.auth.decorators import login_required
+from django.contrib.sessions.models import Session
+from django.contrib import messages
 from .models import *
-
-#    print(f"debug-text {variable}")
 
 # Create the form based on the model already defined
 class NewListingForm(ModelForm):
     class Meta:
         model = Listing
-        fields = ['id', 'title', 'description', 'starting_bid', 'category']
+        fields = ['id', 'title', 'description', 'starting_bid', 'photo_url', 'category']
 
 # Create the form based on the model already defined
 class NewWatchlistForm(ModelForm):
@@ -25,7 +25,8 @@ class NewWatchlistForm(ModelForm):
 
 def index(request):
     return render(request, "auctions/index.html", {
-        "listings": Listing.objects.all()
+        "listings": Listing.objects.filter(active=True).all(),
+        "closed_listings": Listing.objects.filter(active=False).all()
     })
 
 
@@ -40,7 +41,9 @@ def login_view(request):
         # Check if authentication successful
         if user is not None:
             login(request, user)
-            request.session["uid"]=user.id
+            #request.session["uid"]=user.id
+            print(f"Session UID == {user.id} / {request.session.get('_auth_user_id')}")
+
             return HttpResponseRedirect(reverse("auctions:index"))
         else:
             return render(request, "auctions/login.html", {
@@ -77,15 +80,19 @@ def register(request):
                 "message": "Username already taken."
             })
         login(request, user)
+        #request.session["uid"]=user.id
+        print(f"Session UID == {user.id} / {request.session.get('_auth_user_id')}")
+
         return HttpResponseRedirect(reverse("auctions:index"))
     else:
         return render(request, "auctions/register.html")
 
 
+# Render the listing details
 def listing_detail(request, listing_id):
     #l = listing_id
     l = Listing.objects.get(id=listing_id)
-
+#    print(Bid.objects.filter(for_listing=l.id, winning_bid=True).first().by_user.username)
     #get next valid bid from utility function
     return render(request, "auctions/listing_detail.html", {
         "listing": l,
@@ -93,87 +100,147 @@ def listing_detail(request, listing_id):
     })
 
 
-def manage_listing(request, listing_id=''):
+# Create a new listing
+@login_required(login_url='/login')
+def create_listing(request):
     path = request.META['PATH_INFO']
+    print(f"In create_form_listing -- {path}")
 
-    if request.method == "GET" and "create" in path:
-        return render(request, "auctions/manage_listing.html" , {
+    print(f"In GET/ Create")
+    if request.method == "GET":
+        return render(request, "auctions/create_listing.html" , {
             "create_form": NewListingForm(),
-            "action": "create"
         })
-    #Only allow editing of existing entries
-    elif "manage" in path:
-        l = Listing.objects.get(id=listing_id)
-        is_editable = ''
+    elif request.method == "POST":
+        print(f"In POST/ Create")
+        saved_list_id = save_listing(request, "create_new")
+        return HttpResponseRedirect(reverse("auctions:u_listing_detail", kwargs={'listing_id':saved_list_id}))
+
+
+#TODO - see if we can disable the starting-bid field in edit form.
+# Render the listing form with existing listing
+@login_required(login_url='/login')
+def manage_listing(request, listing_id):
+    path = request.META['PATH_INFO']
+    print(f"In manage_listing -- {path}")
+    l = Listing.objects.get(id=listing_id)
+
+    #Only allow editing of existing entries. Lets render the form on GET
+    if request.method == "GET": #and "manage" in path
+        print(f"In GET/ Manage -- {listing_id}")
+
+        is_editable = '' #Empty string means field is editable
 
         # if listing is not active, make form readonly
         if not l.active:
             is_editable = "disabled"
 
-        if l.by_user.id == request.session["uid"]:
+        # only allow the owner of user to edit an entry if entry is active
+        print(f"{l.by_user.id} == {request.session.get('_auth_user_id')}")
+#        if l.by_user.id == request.session["uid"] and l.active:
+        if int(l.by_user.id) == int(request.session.get('_auth_user_id')):
+
             return render(request, "auctions/manage_listing.html" , {
+                "listing" : l,
                 "create_form": NewListingForm(instance=l),
-                "action": "manage",
-                "is_editable": is_editable,
-                "listing_id" : l.id
             })
         else:
             return render(request, "auctions/error.html", {
                 "error_message": "You cannot edit listings owned by someone else"
             })
 
-    #"edit_form": NewListingForm(instance=l),
+    elif request.method == "POST" and "manage" in path:
+        print(f"In POST/ Manage -- {listing_id}")
+        save_listing(request, "edit_existing", l)
+        return HttpResponseRedirect(reverse("auctions:u_listing_detail", kwargs={'listing_id':listing_id}))
+
+
     else:
         return render(request, "auctions/error.html", {
             "error_message": "You can only create uniquely new entries or edit existing entries"
         })
 
 
+#Close the listing, make the highest bidder the winner.
+@login_required(login_url='/login')
 def close_listing(request, listing_id):
     l = Listing.objects.get(id=listing_id)
+    winning_bid = None
 
-    if request.method == "POST":
+    # Set active status to false to close listing.
+    if request.method == "POST" :
         l.active = False
+        pass
         l.save()
 
-    return render(request, "auctions/listing_detail.html", {
-        "listing": l,
-        "next_bid": get_next_bid(l),
-    })
+        #Proceed further only if there are bids on this listing
+        if l.bids_received.count() > 0:
+            # Get max bid from all the bids on this listing
+            max_bid_value = l.bids_received.aggregate(max_bid = Max("bid_value"))
+            max_bid = max_bid_value['max_bid'] #This is the actual bid value
+
+            #Use the max_bid value to find the winning bid
+            winning_bid = l.bids_received.all().filter(bid_value=max_bid).first()
+            print(f"Winning bid = {winning_bid.id} == {winning_bid.for_listing} == {winning_bid.by_user}")
+
+            #Update the bid to be the winning bid.
+            Bid.objects.filter(id=winning_bid.id).update(
+                winning_bid = True,
+            )
+
+    return HttpResponseRedirect(reverse("auctions:u_listing_detail", kwargs={'listing_id':listing_id}))
 
 
-# Save listing changes.
-def save_listing(request):
-    u = User.objects.get(pk=int(request.session["uid"]))
-    #l = ''
-    listing_id = None
+# Save listing changes when changes are posted from the form.
+@login_required(login_url='/login')
+def save_listing(request, action, listing=None):
+    u = User.objects.get(pk=int(request.session.get('_auth_user_id')))
 
     if request.method == "POST":
+        l = listing
+        print(f"In save_listing POST -- {action}")
+
         referer = request.META['HTTP_REFERER']
         form = NewListingForm(request.POST)
-        listing_id = form.data["listing_id"]
+        saved_listing_id = None
 
         if form.is_valid():
             print(f"form cleaned data: {form.cleaned_data}")
             title = form.cleaned_data["title"]
             description = form.cleaned_data["description"]
             starting_bid = form.cleaned_data["starting_bid"]
+            photo_url = form.cleaned_data["photo_url"]
             category = form.cleaned_data["category"]
             by_user = u
 
             #if new listing, just save object and redirect
+            if action == "create_new":
+                saved_listing = Listing.objects.create (
+                    title = title,
+                    description = description,
+                    starting_bid = starting_bid,
+                    photo_url = photo_url,
+                    category = category,
+                    by_user = u )
+                saved_listing_id = saved_listing.id
             #else existing listing, update object based on id
+            elif action == "edit_existing":
+                listing_id = l.id
+                #listing_id = form.data["listing_id"]
+                print(f"In edit_existing -- {listing_id}")
 
-            saved_listing, created = Listing.objects.update_or_create(
-                title = title,
-                defaults = {
-                    'title' : title,
-                    'description' : description,
-                    'category' : category,
-                }
-            )
+                #Update returns the number of rows updated, which is useless to us for now
+                Listing.objects.filter(id=listing_id).update(
+                    title = title,
+                    description = description,
+                    photo_url = photo_url,
+                    category = category,
+                )
+                saved_listing_id = listing_id
 
-            return HttpResponseRedirect(reverse("auctions:u_listing_detail", kwargs={'listing_id':saved_listing.id}))
+            #return value expected from this view
+            return saved_listing_id
+
         else:
             return render(request, "auctions/manage_listing.html", {
                 "error_message": "The form is not valid yet. Go back and edit values"
@@ -184,7 +251,8 @@ def save_listing(request):
         })
 
 
-
+#Add a bid to a listing
+@login_required(login_url='/login')
 def add_bid(request):
     l = Listing.objects.get(pk=request.POST.get("listing"))
     u = User.objects.get(pk=request.POST.get("user"))
@@ -197,31 +265,28 @@ def add_bid(request):
         # If first bid and greater than starting bid, save bid
         if l.bids_received.count() == 0 and bid_value >= int(l.starting_bid):
             Bid.objects.create(by_user=u, for_listing=l, bid_value=bid_value)
+        #Save bid if bid greater than current bid
         else:
-            all_bids = l.bids_received.aggregate(Max("bid_value"))
-            max_bid = int(all_bids[next(iter(all_bids))])
-            if bid_value > max_bid:
+            if bid_value > l.current_bid:
                 Bid.objects.create(by_user=u, for_listing=l, bid_value=bid_value)
 
+        #Upate current bid to the bid value just saved.
         l.current_bid = bid_value
         l.save()
-        request.session["msg"] = "Bid successfully added"
-        print(f"current bid = {l.current_bid}")
-        return redirect("auctions:u_listing_detail", listing_id=l.id)
 
-#        return render(request, "auctions/listing_detail.html", {
-#            "listing": l,
-#            "next_bid" : get_next_bid(l),
-#            "message": "Bid successfully added"
-#        })
+        messages.success(request, 'Bid was successfully added')
+        return redirect("auctions:u_listing_detail", listing_id=l.id)
 
     else:
         return render(request, "auctions/listing_detail.html", {
             "listing": l,
         })
 
+#Create a watchlist
+@login_required(login_url='/login')
 def watchlist(request):
-    u = User.objects.get(pk=int(request.session["uid"]))
+    u = User.objects.get(pk=int(request.session.get('_auth_user_id')))
+#    u = User.objects.get(pk=int(request.session["uid"]))
     form = NewWatchlistForm(request.POST)
 
     #Show the list of watchlists if user visiting page
@@ -251,6 +316,15 @@ def watchlist(request):
         "message": "You Posted to watchlist"
     })
 
+
+def categories(request):
+    return render(request, "auctions/categories.html", {
+        "categories": Category.objects.all(),
+    })
+
+
+#Remove a listing from a watchlist
+@login_required(login_url='/login')
 def unwatch_listing(request, watchlist_id, listing_id):
     w = Watchlist.objects.get(pk=watchlist_id)
     l = Listing.objects.get(pk=listing_id)
@@ -258,15 +332,20 @@ def unwatch_listing(request, watchlist_id, listing_id):
     w.save()
     return redirect("auctions:u_watchlist")
 
+#Delete a watchlist
+@login_required(login_url='/login')
 def delete_watchlist(request, watchlist_id):
     w = Watchlist.objects.get(pk=watchlist_id)
     w.delete()
     return redirect("auctions:u_watchlist")
 
+
 #Add listing to watchlist and redirect user back to watchlist
-def add_to_watchlist(request):
+@login_required(login_url='/login')
+def add_to_watchlist(request, listing_id):
     if request.method == "POST":
-        l = Listing.objects.get(pk=request.POST.get("listing"))
+        l = Listing.objects.get(pk=listing_id)
+        #l = Listing.objects.get(pk=request.POST.get("listing"))
         u = User.objects.get(pk=request.POST.get("user"))
 
         #Add item to watchlist only if watchlist exist
@@ -275,20 +354,22 @@ def add_to_watchlist(request):
             w.listings.add(l)
             w.user = u
             w.save()
-
     return redirect("auctions:u_watchlist")
 
+
 #Add comment to listing and redirect user back to listing
+@login_required(login_url='/login')
 def add_comment(request, listing_id):
+    l = Listing.objects.get(pk=listing_id)
+
     if request.method == "POST":
         text = request.POST.get("comment_body")
         l = Listing.objects.get(pk=listing_id)
-        u = User.objects.get(pk=int(request.session["uid"]))
+        u = User.objects.get(pk=int(request.session.get('_auth_user_id')))
         Comment.objects.create(by_user=u, for_listing=l, content=text)
         return redirect("auctions:u_listing_detail", listing_id=l.id)
     else:
         return redirect("auctions:u_listing_detail", listing_id=listing_id)
-
 
 
 #========================Utility Function================
@@ -300,10 +381,8 @@ def get_next_bid(Listing):
     # If first bid, return the starting bid as next bid
     if l.bids_received.count() == 0:
         next_bid = l.starting_bid
-    #else return the max current bid + incremental bid value
+    #else return the current bid + incremental bid value
     else:
-        #max_bid = l.bids_received.aggregate(Max("bid_value"))
-        #next_bid = int(max_bid[next(iter(max_bid))]) + l.bid_increment
         next_bid = l.current_bid + l.bid_increment
 
     return next_bid
