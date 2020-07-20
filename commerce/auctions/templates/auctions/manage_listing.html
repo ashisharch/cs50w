@@ -14,6 +14,7 @@
             {% csrf_token %}
             <input type="submit" value="Close this listing">
         </form>
+        <hr>
       {%else%}
         <p>This listing is closed. Go back to active listings and happy bidding.</p>
       {%endif%}
@@ -29,7 +30,7 @@
             <table>
             {{create_form.as_table}}
             </table>
-            <input type="submit" value="Submit">
+            <input type="submit" value="Submit changes">
         </form>
     </fieldset>
 

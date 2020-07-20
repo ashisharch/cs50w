@@ -1,4 +1,5 @@
 {% extends "auctions/layout.html" %}
+{% load humanize %}
 
 {% block body %}
     <h2>Listing Detail</h2>
@@ -6,18 +7,6 @@
     {%if error_message%}
       {{error_message}}
     {%endif%}
-
-    <script type="text/javascript">
-      {% for message in messages %}
-        msg = "{{message}}";
-        e = document.getElementById("submit_result");
-        e.innerHTML = "{{message}}";
-      {% endfor %}
-    </script>
-
-
-
-    {% if user.is_authenticated %}
 
     <table border="1">
       <tr>
@@ -28,42 +17,63 @@
           {%endif%}
         </td>
       </tr>
+      {% if listing.active is False%}
+      <tr>
+        <td colspan="2" bgcolor="red" >
+          <div style="color: white;">
+            This listing is now closed.
+          </div>
+        </td>
+      </tr>
+      {%endif%}
       <tr>
         <td>
-          {%if listing.photo_url %}<img src="{{listing.photo_url}}" height="200px" width="200px"> </p>
-                 {%else%} No photo supplied {%endif%}
-
+          {%if listing.photo_url %}
+            <img src="{{listing.photo_url}}" height="200px" width="200px" style="object-fit:contain">
+          {%else%}
+            No photo supplied
+          {%endif%}
         </td>
         <td>
-          <p>Listing Description: {{listing.description}} </p>
-          <p>Starting Bid: {{listing.starting_bid}} </p>
+          <p>{{listing.description}} </p>
+          <p>Category:
+            {%if listing.category.name %}
+              {{listing.category.name}}
+            {%else%}
+              No category listed
+            {%endif%}
+          </p>
+          <p>Starting Price: <b>${{listing.starting_bid|floatformat:"2"|intcomma}}</b> </p>
           {% if listing.active is True %}
-            <p>Current Bid: {{listing.current_bid}}</p>
+            <p><b>{{listing.bids_received.all.count}}</b> bids so far. Current Bid is <b>${{listing.current_bid|floatformat:"2"|intcomma}}</b></p>
           {% elif listing.active is False %}
-            {% for bid in listing.bids_received.all %}
-              {% if bid.winning_bid %}
-                <div>Winner: {{bid.by_user.username}} </div>
-                <div>This item was sold for ${{bid.bid_value}} </div>
-              {%endif%}
-            {% endfor %}
+            {%if listing.bids_received.all.count > 0 %}
+              {% for bid in listing.bids_received.all %}
+                {% if bid.winning_bid %}
+                  <div>Winner: {{bid.by_user.username}} </div>
+                  <div>This item was sold for ${{bid.bid_value|floatformat:"2"|intcomma}} </div>
+                {%endif%}
+              {% endfor %}
+            {%else%}
+              No bids were received
+            {%endif%}
           {% endif %}
         </td>
       </tr>
 
+      {% if user.is_authenticated %}
       {% if listing.active %}
       <tr>
         <td><h6>Make a bid</h6></td>
         <td>
             <form action="{% url 'auctions:u_add_bid' %}" method="post">
                 {% csrf_token %}
-                <input type="number" name="bid" placeholder="Bid {{next_bid}} or higher" min="{{next_bid}}">
+                <input type="number" name="bid" placeholder="Bid ${{next_bid}} or higher" min="{{next_bid}}" required>
                 <input type="hidden" name="listing" value="{{listing.id}}"></input>
                 <input type="hidden" name="user" value="{{user.id}}"></input>
                 {{create_form.as_p}}
                 <input type="submit" value="Submit">
             </form>
-
-            <div id="submit_result"></div>
         </td>
       </tr>
       <tr>
@@ -71,16 +81,18 @@
         <td>
           <form action="{% url 'auctions:u_add_to_watchlist' listing.id %}" method="post">
               {% csrf_token %}
+              {%if user.watchlist.count > 0%}
               <select name="watchlist">
                   {% for watchlist in user.watchlist.all %}
                       <option value="{{ watchlist.id }}">{{ watchlist.name }}</option>
                   {% endfor %}
               </select>
-
+              {%endif%}
               <input type="hidden" name="user" value="{{user.id}}"></input>
               {{create_form.as_p}}
               <input type="submit" value="Add item to watchlist">
           </form>
+
         </td>
       </tr>
       {%endif%}
@@ -97,6 +109,8 @@
           </td>
       </tr>
       {% endfor %}
+
+      {% if listing.active %}
       <tr>
         <td colspan="2">
           <form action="{% url 'auctions:u_add_comment' listing.id%}" method="post">
@@ -107,13 +121,12 @@
           <!-- Show all previous comments made -->
         </td>
       </tr>
+      {%endif%}
+
     </table>
-    <ul>
 
+    {% else %}
+        <p>Sign in to bid, comment etc. Have fun shopping!</p>
+    {% endif %}
 
-      {% else %}
-          <p>You must be signed in to Make a bid</p>
-      {% endif %}
-
-    </ul>
 {% endblock %}

@@ -12,5 +12,14 @@
       </ul>
     {% endfor %}
 
+    {%if uncategorized%}
+    <p>Uncategorized</p>
+    <ul>
+      {% for listing in uncategorized %}
+        <li> <a href="{% url 'auctions:u_listing_detail' listing.id %}"> {{listing.title}} --By:{{listing.by_user}} </a> </li>
+      {% endfor %}
+    </ul>
+    {%endif%}
+
 
 {% endblock %}

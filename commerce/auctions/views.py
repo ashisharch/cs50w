@@ -41,9 +41,6 @@ def login_view(request):
         # Check if authentication successful
         if user is not None:
             login(request, user)
-            #request.session["uid"]=user.id
-            print(f"Session UID == {user.id} / {request.session.get('_auth_user_id')}")
-
             return HttpResponseRedirect(reverse("auctions:index"))
         else:
             return render(request, "auctions/login.html", {
@@ -80,9 +77,6 @@ def register(request):
                 "message": "Username already taken."
             })
         login(request, user)
-        #request.session["uid"]=user.id
-        print(f"Session UID == {user.id} / {request.session.get('_auth_user_id')}")
-
         return HttpResponseRedirect(reverse("auctions:index"))
     else:
         return render(request, "auctions/register.html")
@@ -92,7 +86,6 @@ def register(request):
 def listing_detail(request, listing_id):
     #l = listing_id
     l = Listing.objects.get(id=listing_id)
-#    print(Bid.objects.filter(for_listing=l.id, winning_bid=True).first().by_user.username)
     #get next valid bid from utility function
     return render(request, "auctions/listing_detail.html", {
         "listing": l,
@@ -104,15 +97,11 @@ def listing_detail(request, listing_id):
 @login_required(login_url='/login')
 def create_listing(request):
     path = request.META['PATH_INFO']
-    print(f"In create_form_listing -- {path}")
-
-    print(f"In GET/ Create")
     if request.method == "GET":
         return render(request, "auctions/create_listing.html" , {
             "create_form": NewListingForm(),
         })
     elif request.method == "POST":
-        print(f"In POST/ Create")
         saved_list_id = save_listing(request, "create_new")
         return HttpResponseRedirect(reverse("auctions:u_listing_detail", kwargs={'listing_id':saved_list_id}))
 
@@ -122,13 +111,10 @@ def create_listing(request):
 @login_required(login_url='/login')
 def manage_listing(request, listing_id):
     path = request.META['PATH_INFO']
-    print(f"In manage_listing -- {path}")
     l = Listing.objects.get(id=listing_id)
 
     #Only allow editing of existing entries. Lets render the form on GET
     if request.method == "GET": #and "manage" in path
-        print(f"In GET/ Manage -- {listing_id}")
-
         is_editable = '' #Empty string means field is editable
 
         # if listing is not active, make form readonly
@@ -136,8 +122,6 @@ def manage_listing(request, listing_id):
             is_editable = "disabled"
 
         # only allow the owner of user to edit an entry if entry is active
-        print(f"{l.by_user.id} == {request.session.get('_auth_user_id')}")
-#        if l.by_user.id == request.session["uid"] and l.active:
         if int(l.by_user.id) == int(request.session.get('_auth_user_id')):
 
             return render(request, "auctions/manage_listing.html" , {
@@ -150,7 +134,6 @@ def manage_listing(request, listing_id):
             })
 
     elif request.method == "POST" and "manage" in path:
-        print(f"In POST/ Manage -- {listing_id}")
         save_listing(request, "edit_existing", l)
         return HttpResponseRedirect(reverse("auctions:u_listing_detail", kwargs={'listing_id':listing_id}))
 
@@ -181,7 +164,6 @@ def close_listing(request, listing_id):
 
             #Use the max_bid value to find the winning bid
             winning_bid = l.bids_received.all().filter(bid_value=max_bid).first()
-            print(f"Winning bid = {winning_bid.id} == {winning_bid.for_listing} == {winning_bid.by_user}")
 
             #Update the bid to be the winning bid.
             Bid.objects.filter(id=winning_bid.id).update(
@@ -198,14 +180,10 @@ def save_listing(request, action, listing=None):
 
     if request.method == "POST":
         l = listing
-        print(f"In save_listing POST -- {action}")
-
-        referer = request.META['HTTP_REFERER']
         form = NewListingForm(request.POST)
         saved_listing_id = None
 
         if form.is_valid():
-            print(f"form cleaned data: {form.cleaned_data}")
             title = form.cleaned_data["title"]
             description = form.cleaned_data["description"]
             starting_bid = form.cleaned_data["starting_bid"]
@@ -226,8 +204,6 @@ def save_listing(request, action, listing=None):
             #else existing listing, update object based on id
             elif action == "edit_existing":
                 listing_id = l.id
-                #listing_id = form.data["listing_id"]
-                print(f"In edit_existing -- {listing_id}")
 
                 #Update returns the number of rows updated, which is useless to us for now
                 Listing.objects.filter(id=listing_id).update(
@@ -286,8 +262,9 @@ def add_bid(request):
 @login_required(login_url='/login')
 def watchlist(request):
     u = User.objects.get(pk=int(request.session.get('_auth_user_id')))
-#    u = User.objects.get(pk=int(request.session["uid"]))
     form = NewWatchlistForm(request.POST)
+    #if the user had no watchlist, capture the
+    listing_to_add = request.GET.get('p', '')
 
     #Show the list of watchlists if user visiting page
     if request.method == "GET":
@@ -295,15 +272,10 @@ def watchlist(request):
             "watchlist": u.watchlist.all(),
             "create_form": form
         })
-    #Save the newly addd
     elif request.method == "POST":
-        referer = request.META['HTTP_REFERER']
-        print(f"referer: {referer}")
-
         if form.is_valid():
             name = form.cleaned_data["name"]
             user = form.cleaned_data["user"]
-
             form.save()
             return redirect("auctions:u_watchlist")
         else:
@@ -311,16 +283,31 @@ def watchlist(request):
                 "error_message": "The form is not valid yet. Go back and edit values"
             })
 
-    print(f"In post")
     return render(request, "auctions/watchlist.html", {
         "message": "You Posted to watchlist"
     })
 
 
-def categories(request):
-    return render(request, "auctions/categories.html", {
-        "categories": Category.objects.all(),
-    })
+#Add listing to watchlist and redirect user back to watchlist
+@login_required(login_url='/login')
+def add_to_watchlist(request, listing_id):
+    if request.method == "POST":
+        l = Listing.objects.get(pk=listing_id)
+        u = User.objects.get(pk=request.POST.get("user"))
+
+        #Add item to watchlist if watchlist exist
+        if "watchlist" in request.POST:
+            w = Watchlist.objects.get(pk=request.POST.get("watchlist"))
+            w.listings.add(l)
+            w.user = u
+            w.save()
+        #If no watchlist exists, create a default one and add listing to that watchlist
+        elif "watchlist" not in request.POST:
+            default_watchlist = Watchlist.objects.create(name=u.username+"_watchlist", user=u)
+            default_watchlist.listings.add(l)
+            default_watchlist.save()
+
+    return redirect("auctions:u_watchlist")
 
 
 #Remove a listing from a watchlist
@@ -347,22 +334,6 @@ def delete_watchlist(request, watchlist_id):
     return redirect("auctions:u_watchlist")
 
 
-#Add listing to watchlist and redirect user back to watchlist
-@login_required(login_url='/login')
-def add_to_watchlist(request, listing_id):
-    if request.method == "POST":
-        l = Listing.objects.get(pk=listing_id)
-        u = User.objects.get(pk=request.POST.get("user"))
-
-        #Add item to watchlist only if watchlist exist
-        if "watchlist" in request.POST:
-            w = Watchlist.objects.get(pk=request.POST.get("watchlist"))
-            w.listings.add(l)
-            w.user = u
-            w.save()
-    return redirect("auctions:u_watchlist")
-
-
 #Add comment to listing and redirect user back to listing
 @login_required(login_url='/login')
 def add_comment(request, listing_id):
@@ -377,6 +348,12 @@ def add_comment(request, listing_id):
     else:
         return redirect("auctions:u_listing_detail", listing_id=listing_id)
 
+
+def categories(request):
+    return render(request, "auctions/categories.html", {
+        "categories": Category.objects.all(),
+        "uncategorized" : Listing.objects.filter(category=None)
+    })
 
 #========================Utility Function================
 #Determine next bid, given a listing object

@@ -7,8 +7,12 @@ from auctions.models import User, Listing, Bid, Category, Comment, Watchlist
 class ListingAdmin(admin.ModelAdmin):
     list_dispaly = ("title", "starting_bid", "active")
 
-admin.site.register(User)
-admin.site.register(Listing, ListingAdmin)
+class UserAdmin(admin.ModelAdmin):
+    list_dispaly = ("id", "name", "username")
+
+
+admin.site.register(User,UserAdmin)
+admin.site.register(Listing,ListingAdmin)
 admin.site.register(Bid)
 admin.site.register(Category)
 admin.site.register(Comment)

@@ -25,6 +25,7 @@ class Listing(models.Model):
     bid_increment = models.PositiveIntegerField(default=1)
     current_bid = models.PositiveIntegerField(default=0)
     active = models.BooleanField(default=True)
+    created = models.DateField(auto_now_add=True)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, blank=True, null=True, related_name="listings")
     by_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="my_listings")
     def __str__(self):

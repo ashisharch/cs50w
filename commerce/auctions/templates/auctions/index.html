@@ -1,18 +1,35 @@
 {% extends "auctions/layout.html" %}
+{% load humanize %}
 
 {% block body %}
     <h2>Active Listings</h2>
-    <ul>
-    {% for listing in listings %}
-      <li> <a href="{% url 'auctions:u_listing_detail' listing.id %}"> {{listing.title}} --By:{{listing.by_user}} </a> </li>
-    {% endfor %}
-    </ul>
-
+    <table>
+      {% for listing in listings %}
+      <tr>
+        <td>
+          {%if listing.photo_url %}
+            <a href="{% url 'auctions:u_listing_detail' listing.id %}">
+              <img src="{{listing.photo_url}}" height="200px" width="300px" style="object-fit:contain">
+            </a>
+          {%else%} No photo supplied {%endif%}
+        </td>
+        <td valign="top" style="padding:10px;">
+          <a href="{% url 'auctions:u_listing_detail' listing.id %}"><h4>{{listing.title}}</h4></a>
+          <p>Starting Price: ${{listing.starting_bid|floatformat:"2"|intcomma}} </p>
+          <p>{{listing.description}} </p>
+          <p>Created: {{listing.created}}</p>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+    <hr>
+    {%if closed_listings%}
     <h2>Closed Listings</h2>
     <ul>
     {% for listing in closed_listings %}
-      <li> <a href="{% url 'auctions:u_listing_detail' listing.id %}"> {{listing.title}} --By:{{listing.by_user}} </a> </li>
+      <li> <a href="{% url 'auctions:u_listing_detail' listing.id %}"> {{listing.title}} | By: {{listing.by_user}} </a> </li>
     {% endfor %}
     </ul>
+    {%endif%}
 
 {% endblock %}
