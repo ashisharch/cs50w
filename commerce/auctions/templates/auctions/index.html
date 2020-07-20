@@ -18,6 +18,7 @@
           <p>Starting Price: ${{listing.starting_bid|floatformat:"2"|intcomma}} </p>
           <p>{{listing.description}} </p>
           <p>Created: {{listing.created}}</p>
+          <p>Current Price is <b>${{listing.current_bid|floatformat:"2"|intcomma}}</b></p>
         </td>
       </tr>
       {% endfor %}

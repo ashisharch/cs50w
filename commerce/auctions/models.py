@@ -4,13 +4,6 @@ from django.db import models
 class User(AbstractUser):
     pass
 
-#User: id, name, fk-bid, fk-comment, fk-listing
-#Bid: id, current-bid, fk-user, fk-listing,
-#Listing: id, title, description, category, photo, starting-bid, status, fk-watchlist, fk-bid, fk-comment, fk-user
-#Watchlist: id, fk-user, fk-listing
-#Comment: id, content, fk-user, fk-listing
-#Category: id, name, fk-listing
-
 class Category(models.Model):
     name = models.CharField(max_length=30)
     def __str__(self):
